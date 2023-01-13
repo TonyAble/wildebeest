@@ -4,7 +4,8 @@ import type { JWK } from 'wildebeest/backend/src/webpush/jwk'
 import * as actors from 'wildebeest/backend/src/activitypub/actors'
 import { actorURL } from 'wildebeest/backend/src/activitypub/actors'
 import type { Env } from 'wildebeest/backend/src/types/env'
-import type { MessageBody } from 'wildebeest/backend/src/types/queue'
+import type { DeliverMessageBody } from 'wildebeest/backend/src/types/queue'
+import { MessageType } from 'wildebeest/backend/src/types/queue'
 import type { Activity } from 'wildebeest/backend/src/activitypub/activities'
 import { parseRequest } from 'wildebeest/backend/src/utils/httpsigjs/parser'
 import { fetchKey, verifySignature } from 'wildebeest/backend/src/utils/httpsigjs/verifier'
@@ -37,9 +38,8 @@ export async function handleRequest(
 	db: D1Database,
 	id: string,
 	activity: Activity,
-	queue: Queue<MessageBody>,
-	userKEK: string,
-	vapidKeys: JWK
+	queue: Queue<DeliverMessageBody>,
+	userKEK: string
 ): Promise<Response> {
 	const handle = parseHandle(id)
 
@@ -54,11 +54,10 @@ export async function handleRequest(
 	}
 
 	await queue.send({
-		type: 'activity',
+		type: MessageType.Inbox,
 		actorId: actor.id.toString(),
-		content: activity,
+		activity,
 		userKEK,
-		vapidKeys,
 	})
 
 	return new Response('', { status: 200 })
